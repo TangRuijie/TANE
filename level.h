@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <iostream>
-#define ATTRIBUTE_NUMBER	15
+#define ATTRIBUTE_NUMBER	12
 
 class Level {
 	public:

@@ -23,7 +23,7 @@ std::vector<int> ComputeRhsPlus(std::vector<int> &X);
 
 void ComputePartition() {
 	std::ifstream infile;
-	infile.open("data.txt", std::ios::in);
+	infile.open("test_data.txt", std::ios::in);
 	if (!infile.is_open())
 		std::cout << "Failed to open the file." << std::endl;
 	std::string tmp_str;
@@ -92,10 +92,13 @@ std::vector<std::vector<int>> XMultipleY(std::vector<std::vector<int>> X, std::v
 	std::vector<std::vector<int>> result;
 	std::unordered_map<int, int> T;
 	std::vector<std::vector<int>> S;
+	std::vector<int> tmp;
+	S.push_back(tmp);
 
 	for (int i = 1; i <= X.size(); i++) {
 		for (int j = 0; j < X[i-1].size(); j++) {
-			T[X[i - 1][j]] = i;
+			int t = X[i - 1][j];
+			T[t] = i;
 		}
 		std::vector<int> tmp_vec;
 		S.push_back(tmp_vec);
@@ -150,21 +153,24 @@ void ComputeDependcies(Level &L) {
 }
 
 void Prune(Level &L) {
-	for (auto iter = L.set.begin(); iter != L.set.end(); ++iter) {
-		auto rhsPlus = ComputeRhsPlus(*iter);
+	for (int i = 0; i < L.set.size(); ++i) {
+		auto rhsPlus = ComputeRhsPlus(L.set[i]);
 		if (rhsPlus.empty()) {
-			L.set.erase(iter);
+			L.set.erase(L.set.begin() + i);
 		}
 	}
 }
 
 bool isHolds(std::vector<int> X, int B) {
+	if (X.size() == 0)
+		return false;
 	int a = m_map[X].size();
 	std::vector<int> Y;
 	Y.push_back(B);
 	std::vector<std::vector<int>> tmp_vec = XMultipleY(m_map[X], m_map[Y]);
 	int b = tmp_vec.size();
 	X.push_back(B);
+	sort(X.begin(), X.end());
 	m_map[X] = tmp_vec;
 	if (a == b)
 		return true;
@@ -175,6 +181,17 @@ bool isHolds(std::vector<int> X, int B) {
 std::vector<int> ComputeRhsPlus(std::vector<int> &X) {
 	std::vector<int> result;
 	for (int i = 1; i <= ATTRIBUTE_NUMBER; i++) {
+		// 如果i不在X中，不进行计算
+		bool iInX = false;
+		for (int j = 0; j < X.size(); j++) {
+			if (i == X[j]) {
+				iInX = true;
+				break;
+			}
+		}
+		if (!iInX)
+			continue;
+		//如果i在X中，进行计算
 		bool tmp_flag = true;
 		for (int j = 0; j < X.size(); j++) {
 			std::vector<int> X_AB;
@@ -198,6 +215,11 @@ int main() {
 	Level L;
 	auto start_time = clock();
 	ComputePartition();
+	while (L.set.size() != 0) {
+		ComputeDependcies(L);
+		Prune(L);
+		L.GenerateNextLevel();
+	}
 	auto end_time = clock();
 	std::cout << "cost time: " << (end_time - start_time) / 1000.0 << "s" << std::endl;
 
