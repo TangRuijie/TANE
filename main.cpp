@@ -13,6 +13,13 @@ std::vector<std::vector<int>> partition[ATTRIBUTE_NUMBER];
 std::vector<std::string> data[ATTRIBUTE_NUMBER];
 std::map<std::vector<int>, std::vector<std::vector<int>>> m_map;
 
+void ComputePartition();
+std::vector<std::vector<int>> XMultipleY(std::vector<std::vector<int>> X, std::vector<std::vector<int>> Y);
+void ComputeDependcies(Level &L);
+void Prune(Level &L);
+bool isHolds(std::vector<int> X, int B);
+std::vector<int> ComputeRhsPlus(std::vector<int> &X);
+
 
 void ComputePartition() {
 	std::ifstream infile;
