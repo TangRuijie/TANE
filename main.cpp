@@ -5,10 +5,13 @@
 #include <string>
 #include <ctime>
 #include <unordered_map>
+#include <map>
 #include "level.h"
 
 std::vector<std::vector<int>> partition[ATTRIBUTE_NUMBER];
 std::vector<std::string> data[ATTRIBUTE_NUMBER];
+std::map<std::vector<int>, std::vector<std::vector<int>>> m_map;
+
 
 void ComputePartition() {
 	std::ifstream infile;
@@ -62,7 +65,7 @@ void ComputePartition() {
 		}
 	}
 
-	// 计算划分
+	// 计算单属性划分
 	for (int i = 0; i < ATTRIBUTE_NUMBER; i++) {
 		for (int j = 0; j < value_num[i] - 1; j++) {
 			std::vector<int> tmp_vec;
@@ -72,10 +75,48 @@ void ComputePartition() {
 		for (int j = 0; j < tmp_size; j++) {
 			partition[i][map[i][data[i][j]] - 1].push_back(j);
 		}
+		std::vector<int> tmp_vec;
+		tmp_vec.push_back(i + 1);
+		m_map[tmp_vec] = partition[i];
 	}
-
+	
 
 	infile.close();
+}
+
+std::vector<std::vector<int>> XMultipleY(std::vector<std::vector<int>> X, std::vector<std::vector<int>> Y) {
+	std::vector<std::vector<int>> result;
+	std::unordered_map<int, int> T;
+	std::vector<std::vector<int>> S;
+
+	for (int i = 1; i <= X.size(); i++) {
+		for (int j = 0; j < X[i-1].size(); j++) {
+			T[X[i - 1][j]] = i;
+		}
+		std::vector<int> tmp_vec;
+		S.push_back(tmp_vec);
+	}
+	for (int i = 1; i <= Y.size(); i++) {
+		for (int j = 0; j < Y[i - 1].size(); j++) {
+			int t = Y[i - 1][j];
+			if (T[t] != 0)
+				S[T[t]].push_back(t);
+		}
+		for (int j = 0; j < Y[i - 1].size(); j++) {
+			int t = Y[i - 1][j];
+			if (S[T[t]].size() >= 2) {
+				result.push_back(S[T[t]]);
+			}
+			S[T[t]].clear();
+		}
+	}
+	for (int i = 1; i <= X.size(); i++) {
+		for (int j = 0; j < X[i-1].size(); j++) {
+			int t = X[i - 1][j];
+			T[t] = 0;
+		}
+	}
+	return result;
 }
 
 void ComputeDependcies(Level L) {
@@ -83,7 +124,17 @@ void ComputeDependcies(Level L) {
 }
 
 bool isHolds(std::vector<int> X, int B) {
-	return true;
+	int a = m_map[X].size();
+	std::vector<int> Y;
+	Y.push_back(B);
+	std::vector<std::vector<int>> tmp_vec = XMultipleY(m_map[X], m_map[Y]);
+	int b = tmp_vec.size();
+	X.push_back(B);
+	m_map[X] = tmp_vec;
+	if (a == b)
+		return true;
+	else
+		return false;
 }
 
 std::vector<int> ComputeRhsPlus(std::vector<int> X) {
@@ -114,6 +165,7 @@ int main() {
 	ComputePartition();
 	auto end_time = clock();
 	std::cout << "cost time: " << (end_time - start_time) / 1000.0 << "s" << std::endl;
+
 	system("pause");
 
 	return 0;
