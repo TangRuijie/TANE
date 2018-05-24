@@ -8,6 +8,7 @@
 #include <map>
 #include "level.h"
 
+std::map<std::vector<int>, std::vector<std::vector<int>>> partition_map;
 std::vector<std::vector<int>> partition[ATTRIBUTE_NUMBER];
 std::vector<std::string> data[ATTRIBUTE_NUMBER];
 std::map<std::vector<int>, std::vector<std::vector<int>>> m_map;
@@ -20,10 +21,8 @@ void ComputePartition() {
 		std::cout << "Failed to open the file." << std::endl;
 	std::string tmp_str;
 
-	// 当前读入属性的名称
 	int current_attr = 1;
 
-	// 读入数据
 	while (!infile.eof()) {
 		char a = infile.get();
 		if (a == ',') {
@@ -46,14 +45,12 @@ void ComputePartition() {
 		else {
 			tmp_str.push_back(a);
 		}
-	}	
+	}
 
-	// 各个属性分别有多少种值
 	int value_num[15] = { 0 };
 	for (int i = 0; i < ATTRIBUTE_NUMBER; i++)
 		value_num[i] = 1;
 
-	// 计算哈希值
 	std::unordered_map<std::string, int> map[ATTRIBUTE_NUMBER];
 	for (int i = 0; i < ATTRIBUTE_NUMBER; i++) {
 		int tmp_size = data[i].size();
@@ -119,8 +116,39 @@ std::vector<std::vector<int>> XMultipleY(std::vector<std::vector<int>> X, std::v
 	return result;
 }
 
-void ComputeDependcies(Level L) {
+void ComputeDependcies(Level &L) {
+	for (auto &X : L.set) {
+		auto rhsPlus = ComputeRhsPlus(X);
+		int length = X.size();
+		for (int i = 0; i < length; ++i) {
+			auto index = std::find(rhsPlus.begin(), rhsPlus.end(), X[i]);
+			if (index != rhsPlus.end()) {
+				auto xDeleteA = X;
+				xDeleteA.erase(xDeleteA.begin() + i);
+				if (isHolds(xDeleteA, X[i])) {
+					for (auto &i : xDeleteA) {
+						std::cout << i << " ";
+					}
+					std::cout << "->" << X[i] << std::endl;
+					rhsPlus.erase(index);
+					for (auto iter = rhsPlus.begin(); iter != rhsPlus.end(); ++iter) {
+						if (std::find(X.begin(), X.end(), *iter) == X.end()) {
+							rhsPlus.erase(iter);
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
+void Prune(Level &L) {
+	for (auto iter = L.set.begin(); iter != L.set.end(); ++iter) {
+		auto rhsPlus = ComputeRhsPlus(*iter);
+		if (rhsPlus.empty()) {
+			L.set.erase(iter);
+		}
+	}
 }
 
 bool isHolds(std::vector<int> X, int B) {
@@ -137,11 +165,11 @@ bool isHolds(std::vector<int> X, int B) {
 		return false;
 }
 
-std::vector<int> ComputeRhsPlus(std::vector<int> X) {
+std::vector<int> ComputeRhsPlus(std::vector<int> &X) {
 	std::vector<int> result;
 	for (int i = 1; i <= ATTRIBUTE_NUMBER; i++) {
 		bool tmp_flag = true;
-		for (int j = 0; j < X.size(); j++) {	
+		for (int j = 0; j < X.size(); j++) {
 			std::vector<int> X_AB;
 			for (int k = 0; k < X.size(); k++) {
 				if (X[k] == i || X[k] == X[j])
